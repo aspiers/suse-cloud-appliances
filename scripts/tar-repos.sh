@@ -4,11 +4,6 @@
 # repositories into the appliance's /srv/tftpboot/repos directory
 # at appliance build-time.  One .tar.bz2 is created per repo.
 
-ALL_REPOS=(
-    {SLES11,SLE11-HAE}-SP3-{Pool,Updates}
-    SUSE-Cloud-3.0-{Pool,Updates}
-)
-
 warn () {
     echo >&2 "$*"
 }
@@ -22,11 +17,13 @@ abort () {
     die "$*; aborting."
 }
 
-set_dirs () {
+set_vars () {
     case "$USER" in
         adam)
             : ${MIRROR_DIR:=/data/install/mirrors}
             : ${DEST_DIR:=/data/install/mirrors/tars}
+            # Not mirroring via SMT
+            : ${CLOUD_VERSION:=3}
             ;;
         cseader)
             : ${MIRROR_DIR:=/data/install/smt/repo/\$RCE}
@@ -37,10 +34,19 @@ set_dirs () {
             : ${DEST_DIR:=/root}
             ;;
     esac
+
+    # Someone screwed up when creating the SUSE Cloud channels which
+    # get mirrored by SMT, and called them 3.0 instead of 3.
+    : ${CLOUD_VERSION:=3.0}
+
+    ALL_REPOS=(
+        {SLES11,SLE11-HAE}-SP3-{Pool,Updates}
+        SUSE-Cloud-${cloud_version}-{Pool,Updates}
+    )
 }
 
 main () {
-    set_dirs
+    set_vars
 
     if ! [ -d "$DEST_DIR" ]; then
         abort "Destination $DEST_DIR is not a valid directory"
